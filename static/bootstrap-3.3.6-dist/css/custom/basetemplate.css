@@ -1,0 +1,41 @@
+body {
+    padding-top: 50px;
+}
+
+.base-template {
+    padding: 40px 15px;
+    text-align: center;
+}
+
+.navbar-custom {
+	background-color: #000000;
+}
+
+.nav-custom li a {
+	color: #ffffff!important;
+}
+
+/* fonts */
+
+.title {
+	font-family: "SharpSans-No1-Medium";
+	color: #000000!important;
+	font-size: 60px;
+}
+
+.sharpsans-no1-thin {
+	font-family: "SharpSans-No1-Thin";
+	color: #ffffff!important;
+}
+
+@font-face {
+	font-family: "SharpSans-No1-Thin";
+	src: url("../../../fonts/SharpSans-No1/SharpSans-No1-Thin.otf") format("opentype");
+	font-weight: normal;
+}
+
+@font-face {
+	font-family: "SharpSans-No1-Medium";
+	src: url("../../../fonts/SharpSans-No1/SharpSans-No1-Medium.otf") format("opentype");
+	font-weight: normal;
+}

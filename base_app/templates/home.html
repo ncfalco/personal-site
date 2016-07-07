@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load staticfiles%}
+
+{% block head %}
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+	<link href="{% static 'custom-css/typed.css' %}" rel="stylesheet" />
+	<script src="{% static 'custom-js/typed/typed.min.js' %}"></script>
+	
+	<script>
+	    $(function(){
+	        $(".element").typed({
+	            strings: ["Software Engineer.^1000<br/>Web Developer."],
+	            typeSpeed: 0,
+	            showCursor: true,
+	            onStringTyped: function() {
+	            	$(".element").typed(
+						{showCursor: false}
+					   );}
+	        });
+	    });
+	</script>
+	<script>
+		$(document).ready(function() {
+    		var t = new Tetris();
+    		t.initialize();
+    	});
+	</script>
+	<script src="{% static 'custom-js/game/game.js' %}"></script>
+<style>
+canvas {
+    background: #cdcdcd;
+}​
+</style>
+
+{% endblock %}
+{% block content %}
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-12 col-md-12 col-lg-12"/>
+				<h1 class="title">
+					<span class="element"></span>
+				</h1>
+			</div>
+		</div>
+	<div>
+	<canvas id="d_canvas" width=="400" height="500"></canvas>
+{% endblock %}
