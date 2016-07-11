@@ -5,7 +5,9 @@ var Tetris = function() {
 	//get canvas context
     var d_canvas = document.getElementById('d_canvas');//html canvas
     var ctx = d_canvas.getContext('2d');//canvas context
+    //style canvas
     d_canvas.height = d_canvas.width * 2; //set grid height so that it is an integer number of block size
+    d_canvas.style.border = "Black 1px solid";
     var numColumns = 10; //Number of grid columns
     var blockSize = d_canvas.width / numColumns; //calculates block size for 10 column width
     var numRows = d_canvas.height / blockSize; //number of rows in grid
@@ -27,7 +29,11 @@ var Tetris = function() {
      * Check if first row contains a block. If yes -> game over.
      */
     function isGameOver(grid) {
-    	return grid[0].includes(1);
+	    for(var c = 0; c < numColumns; c++) {
+	    	if(grid[0][c] != "EMPTY")
+	    		return true;
+	    }
+	    return false;
     }
 	
 	/**
@@ -54,9 +60,12 @@ var Tetris = function() {
 			activePiece = new Piece();
 			mainGrid.curPiece = activePiece;
 		}
-		if(isGameOver(mainGrid.grid)){
+		if(isGameOver(mainGrid.grid)) {
 			mainGrid.drawPlacedPieces();
-			alert("GAMEOVER");
+			ctx.fillStyle = "White";
+			ctx.textAlign = "center";
+			ctx.font = "18px Helvetica";
+			ctx.fillText("GAME OVER", d_canvas.width/2,d_canvas.height/2);
 			clearInterval(refreshIntervalId);
 			clearInterval(incrementIntervalId);
 		}
@@ -95,7 +104,7 @@ var Tetris = function() {
     	 */
     	Piece.prototype.getVerticalDepth = function() {
     		var piece = this.getPiecePattern();
-    		var depth = 0
+    		var depth = 0;
     		for(var r = 0; r < piece.length; r++){
     			var rowPattern = piece[r];
     			var binaryVal = leftPad(parseInt(rowPattern).toString(2), 4);
@@ -181,6 +190,26 @@ var Tetris = function() {
     			else
     				this.position++;
     		}
+    	}
+    	
+    	/**
+    	 * Gets color for the piece shape
+    	 */
+    	Piece.prototype.getColor = function() {
+    		if(this.type == "O")
+    			return "yellow";
+    		else if (this.type == "I")
+    			return "teal";
+    		else if (this.type == "S")
+    			return "green";
+    		else if (this.type == "Z")
+    			return "red";
+    		else if (this.type == "L")
+    			return "orange";
+    		else if (this.type == "J")
+    			return "blue";
+    		else if (this.type == "T")
+    			return "purple";
     	}
     	
     	/**
@@ -279,7 +308,7 @@ var Tetris = function() {
         	for (row = 0; row < numRows; row++) {
         		g[row] = new Array();
         		for(col = 0; col < numColumns; col++) {
-        			g[row][col] = 0;
+        			g[row][col] = "EMPTY";
         		}
         	}
         	return g;
@@ -301,7 +330,9 @@ var Tetris = function() {
     					if((this.curPiece.ypos + r + 1) >= this.grid.length) { //piece on bottom
     						return false;
     					} else if (this.curPiece.ypos >= 0 && 
-    							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] == 1) {
+    							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] != "EMPTY" &&
+    							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] != null
+    					) {
     						return false;
     					}
     				}
@@ -321,9 +352,9 @@ var Tetris = function() {
         			this.removeFilledRows(r);
         		}
         		for(var c = 0; c < numColumns; c++){
-        			if(this.grid[r][c] == 1) {
+        			if(this.grid[r][c] != "EMPTY") {
 						ctx.beginPath();
-						ctx.fillStyle = "red";
+						ctx.fillStyle = this.grid[r][c];
 					    ctx.rect(c * blockSize, r * blockSize, blockSize, blockSize);
 						ctx.fill();
 					    ctx.lineWidth = 2;
@@ -354,10 +385,9 @@ var Tetris = function() {
     			var binaryVal = leftPad(parseInt(rowPattern).toString(2), 4);
     			for(var c = 0; c < binaryVal.length; c++){
     				if(binaryVal[c] == '1')
-    					this.grid[(this.curPiece.ypos + r)][(this.curPiece.xpos + c)] = 1;//mark filled blocks in grid
+    					this.grid[(this.curPiece.ypos + r)][(this.curPiece.xpos + c)] = this.curPiece.getColor();//mark filled blocks in grid
     			}
     		}
-    		this.pieces.push(this.curPiece);  
         }
         
     	/**
@@ -390,7 +420,7 @@ var Tetris = function() {
     					}
     					// draw pixels to canvas
     					ctx.beginPath();
-    					ctx.fillStyle = "#6633EF";
+    					ctx.fillStyle = this.curPiece.getColor();
     				    ctx.rect((c + this.curPiece.xpos) * blockSize, 
     					    		(r + this.curPiece.ypos) * blockSize, 
     					    		blockSize, blockSize
@@ -422,7 +452,7 @@ var Tetris = function() {
          */
         GameGrid.prototype.isRowFilled = function(rowNum) {
         	for(var c = 0; c < numColumns; c++) {
-        		if(this.grid[rowNum][c] == 0)
+        		if(this.grid[rowNum][c] == "EMPTY")
         			return false;
         	}
         	return true;
@@ -435,7 +465,6 @@ var Tetris = function() {
         	this.curPiece = curPiece;
         }
         
-    	this.pieces = [];
     	this.curPiece;
         this.grid = this.getGameGrid();
     }
