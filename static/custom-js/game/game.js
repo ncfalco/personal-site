@@ -11,7 +11,8 @@ var Tetris = function() {
     var numRows = d_canvas.height / blockSize; //number of rows in grid
     var mainGrid; // two dimensional game grid
     var activePiece; // current piece under user control
-    var score;
+    var score = 0;
+    var level = 1; 
     //Keyboard controls
     var KEY = { ESC: 27, SPACE: 32, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
 
@@ -41,6 +42,9 @@ var Tetris = function() {
 	 */
 	Tetris.prototype.refresh = function() {
 		ctx.clearRect(0, 0, d_canvas.width, d_canvas.height);
+		//update score
+		document.getElementById('score_label').innerHTML = 'Score = ' + score;
+		//draw placed pieces
 		mainGrid.drawPlacedPieces();
 		if(mainGrid.isCurrentPieceMovable()) {
 			mainGrid.drawCurrentPiece();
@@ -59,7 +63,7 @@ var Tetris = function() {
 	}
 	
 	var refreshIntervalId = setInterval(this.refresh, 1);
-	var incrementIntervalId = setInterval(this.incrementState, 1000);
+	var incrementIntervalId = setInterval(this.incrementState, 250);
 	
 	/**
 	 * Handler for keyboard input
@@ -313,6 +317,7 @@ var Tetris = function() {
         	// draw all placed pieces
         	for(var r = 0; r < numRows; r++){
         		if(this.isRowFilled(r)) {
+        			score += numColumns;
         			this.removeFilledRows(r);
         		}
         		for(var c = 0; c < numColumns; c++){
@@ -417,7 +422,7 @@ var Tetris = function() {
          */
         GameGrid.prototype.isRowFilled = function(rowNum) {
         	for(var c = 0; c < numColumns; c++) {
-        		if(this.grid[rowNum][c] != 1)
+        		if(this.grid[rowNum][c] == 0)
         			return false;
         	}
         	return true;
