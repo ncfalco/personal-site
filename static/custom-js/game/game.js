@@ -13,16 +13,31 @@ var Tetris = function() {
     var numRows = d_canvas.height / blockSize; //number of rows in grid
     var mainGrid; // two dimensional game grid
     var activePiece; // current piece under user control
+    var refreshIntervalId;
+    var incrementIntervalId;
     var score = 0;
     var level = 1; 
+    var numPieces = 0; 
     //Keyboard controls
     var KEY = { ESC: 27, SPACE: 32, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
 
-    
 	Tetris.prototype.initialize = function() {
+		d_canvas.style.backgroundColor = "White";
+		ctx.fillStyle = "Black";
+		ctx.textAlign = "center";
+		ctx.font = "18px Helvetica";
+		ctx.fillText("TETRIS", d_canvas.width/2,d_canvas.height/2);
+	}
+    
+	Tetris.prototype.play = function() {
+		d_canvas.style.backgroundColor = "lightgrey";
 		mainGrid = new GameGrid();
 		activePiece = new Piece();
 	    mainGrid.setCurrentPiece(activePiece);
+	    if(refreshIntervalId == null && incrementIntervalId == null) {	
+		    refreshIntervalId = setInterval(this.refresh, 1);
+			incrementIntervalId = setInterval(this.incrementState, 300);
+	    }
 	}
 	
     /**
@@ -30,7 +45,7 @@ var Tetris = function() {
      */
     function isGameOver(grid) {
 	    for(var c = 0; c < numColumns; c++) {
-	    	if(grid[0][c] != "EMPTY")
+	    	if(grid[0][c] != null)
 	    		return true;
 	    }
 	    return false;
@@ -40,6 +55,7 @@ var Tetris = function() {
 	 * Speed at which game state is incremented 
 	 */
 	Tetris.prototype.incrementState = function() {
+		if(mainGrid.isCurrentPieceMovableDown())
 			activePiece.moveDown();
 	}
 
@@ -51,8 +67,7 @@ var Tetris = function() {
 		//update score
 		document.getElementById('score_label').innerHTML = 'Score = ' + score;
 		//draw placed pieces
-		mainGrid.drawPlacedPieces();
-		if(mainGrid.isCurrentPieceMovable()) {
+		if(mainGrid.isCurrentPieceMovableDown()) {
 			mainGrid.drawCurrentPiece();
 		} else{
 			//create another piece
@@ -60,6 +75,7 @@ var Tetris = function() {
 			activePiece = new Piece();
 			mainGrid.curPiece = activePiece;
 		}
+		mainGrid.drawPlacedPieces();
 		if(isGameOver(mainGrid.grid)) {
 			mainGrid.drawPlacedPieces();
 			ctx.fillStyle = "White";
@@ -71,22 +87,24 @@ var Tetris = function() {
 		}
 	}
 	
-	var refreshIntervalId = setInterval(this.refresh, 1);
-	var incrementIntervalId = setInterval(this.incrementState, 250);
-	
 	/**
 	 * Handler for keyboard input
 	 */
     document.addEventListener('keydown', function(e) {
 		switch(e.keyCode) {
 			case KEY.LEFT:   
-				mainGrid.curPiece.moveLeft();  break;
+				if(mainGrid.isCurrentPieceMovableLeft())
+					mainGrid.curPiece.moveLeft();  
+				break;
 			case KEY.RIGHT:  
-				mainGrid.curPiece.moveRight(); break;
-			case KEY.UP:     
+				if(mainGrid.isCurrentPieceMovableRight())
+					mainGrid.curPiece.moveRight(); 
+				break;
+			case KEY.UP:  
 				mainGrid.curPiece.rotate();    break;
 			case KEY.DOWN:   
-				mainGrid.curPiece.moveDown();  break;
+				if(mainGrid.isCurrentPieceMovableDown())
+					mainGrid.curPiece.moveDown();  break;
 		}
 		e.preventDefault();
     });
@@ -286,8 +304,8 @@ var Tetris = function() {
     	//member variables
     	this.type = types[Math.floor(Math.random() * types.length)]; //get random shape
     	this.position = positions[Math.floor(Math.random() * positions.length)]; //get random shape starting this.position
-    	this.xpos = Math.floor(Math.random() * numColumns);
-    	this.ypos = -this.getVerticalDepth();
+    	this.xpos = 0;
+    	this.ypos = 0;
     	this.placed = false;
     }
 
@@ -296,9 +314,6 @@ var Tetris = function() {
      * and collision detection.
      */
     function GameGrid() {
-        var d_canvas = document.getElementById('d_canvas');//html canvas
-        var ctx = d_canvas.getContext('2d');//canvas context
-    	
     	/**
     	 * Creates a multidimensional array game grid
     	 */
@@ -308,7 +323,7 @@ var Tetris = function() {
         	for (row = 0; row < numRows; row++) {
         		g[row] = new Array();
         		for(col = 0; col < numColumns; col++) {
-        			g[row][col] = "EMPTY";
+        			g[row][col] = null;
         		}
         	}
         	return g;
@@ -316,9 +331,10 @@ var Tetris = function() {
         
         /**
          * Checks whether the current active piece is should be placed 
-         * permanently or not
+         * permanently or not due to another piece hitting the bottom or
+         * reaching the bottom of the grid.
          */
-        GameGrid.prototype.isCurrentPieceMovable = function() {
+        GameGrid.prototype.isCurrentPieceMovableDown = function() {
         	var piecePattern = this.curPiece.getPiecePattern();
         	for(var r = 0; r < piecePattern.length; r++){
         		var rowPattern = piecePattern[r]; //get pattern for piece
@@ -330,8 +346,60 @@ var Tetris = function() {
     					if((this.curPiece.ypos + r + 1) >= this.grid.length) { //piece on bottom
     						return false;
     					} else if (this.curPiece.ypos >= 0 && 
-    							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] != "EMPTY" &&
+    							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] != null &&
     							this.grid[this.curPiece.ypos + r + 1][(this.curPiece.xpos + c)] != null
+    					) {
+    						return false;
+    					}
+    				}
+    			}
+        	}
+        	return true;
+        }
+        
+        /**
+         * Determines whether the current piece can be moved to the right
+         */
+        GameGrid.prototype.isCurrentPieceMovableRight = function() {
+        	var piecePattern = this.curPiece.getPiecePattern();
+        	for(var r = 0; r < piecePattern.length; r++){
+        		var rowPattern = piecePattern[r]; //get pattern for piece
+    			var binaryVal = leftPad(parseInt(rowPattern).toString(2), 4);
+    			for(var c = 0; c < binaryVal.length; c++) {
+    				//if a block in the 4X4 piece grid is filled then check if 
+    				//the block to the right of it on the game grid is filled
+    				if(binaryVal[c] == '1'){
+    					if ( this.curPiece.ypos < 0 && (this.curPiece.xpos + c) != numColumns-1) {
+    						return true;
+    					} else if (
+							(this.curPiece.xpos + c) == numColumns-1 ||
+							( this.grid[this.curPiece.ypos + r][(this.curPiece.xpos + c + 1)] != null &&
+							this.grid[this.curPiece.ypos + r][(this.curPiece.xpos + c + 1)] != null )
+    					) {
+    						return false;
+    					}
+    				}
+    			}
+        	}
+        	return true;
+        }
+        
+        GameGrid.prototype.isCurrentPieceMovableLeft = function() {
+        	var piecePattern = this.curPiece.getPiecePattern();
+        	for(var r = 0; r < piecePattern.length; r++){
+        		var rowPattern = piecePattern[r]; //get pattern for piece
+    			var binaryVal = leftPad(parseInt(rowPattern).toString(2), 4);
+    			for(var c = 0; c < binaryVal.length; c++) {
+    				//if a block in the 4X4 piece grid is filled then check if 
+    				//the block to the left of it on the game grid is filled
+    				if(binaryVal[c] == '1'){
+    					if ( this.curPiece.ypos < 0 && (this.curPiece.xpos + c) != 0) {
+    						return true;
+    					} else if (
+    						this.curPiece.ypos < 0 ||
+    						(this.curPiece.xpos + c) == 0 || 
+    						( this.grid[this.curPiece.ypos + r][(this.curPiece.xpos + c - 1)] != null &&
+    						this.grid[this.curPiece.ypos + r][(this.curPiece.xpos + c - 1)] != null )  
     					) {
     						return false;
     					}
@@ -351,8 +419,10 @@ var Tetris = function() {
         			score += numColumns;
         			this.removeFilledRows(r);
         		}
+        	}
+        	for(var r = 0; r < numRows; r++){
         		for(var c = 0; c < numColumns; c++){
-        			if(this.grid[r][c] != "EMPTY") {
+        			if(this.grid[r][c] != null) {
 						ctx.beginPath();
 						ctx.fillStyle = this.grid[r][c];
 					    ctx.rect(c * blockSize, r * blockSize, blockSize, blockSize);
@@ -372,7 +442,7 @@ var Tetris = function() {
         	if(rowNum > 0) {
         		this.grid[rowNum] = this.grid[rowNum - 1];
         		this.removeFilledRows(rowNum - 1);
-        	} 
+        	}
         }
         
         /**
@@ -384,8 +454,9 @@ var Tetris = function() {
     			var rowPattern = piecePattern[r]; //get pattern for piece
     			var binaryVal = leftPad(parseInt(rowPattern).toString(2), 4);
     			for(var c = 0; c < binaryVal.length; c++){
-    				if(binaryVal[c] == '1')
+    				if(binaryVal[c] == '1') {
     					this.grid[(this.curPiece.ypos + r)][(this.curPiece.xpos + c)] = this.curPiece.getColor();//mark filled blocks in grid
+    				}
     			}
     		}
         }
@@ -405,6 +476,7 @@ var Tetris = function() {
     					if((this.curPiece.ypos + this.curPiece.getVerticalDepth()) > numRows) {
     						this.curPiece.ypos -= 1;
     						this.curPiece.placed = true;
+    						alert("corrected vertical depth");
     						this.drawCurrentPiece();
     					} 
     					// correct to make piece position valid horizontally 
@@ -451,11 +523,15 @@ var Tetris = function() {
          * Check if a row is completely filled
          */
         GameGrid.prototype.isRowFilled = function(rowNum) {
+        	var numOccupiedCells = 0;
         	for(var c = 0; c < numColumns; c++) {
-        		if(this.grid[rowNum][c] == "EMPTY")
-        			return false;
+        		if(this.grid[rowNum][c] != null)
+        			numOccupiedCells++;
         	}
-        	return true;
+        	if(numOccupiedCells == numColumns)
+        		return true;
+        	else
+        		return false;
         }
         
         /**

@@ -21,8 +21,13 @@
 	</script>
 	<script>
 		$(document).ready(function() {
-    		var t = new Tetris();
-    		t.initialize();
+			var t = new Tetris();
+			t.initialize();
+			//if play button is clicked then start the game
+			$("#play_button").click( function() {
+	    		t.play();
+    		});
+    		
     	});
 	</script>
 	<script src="{% static 'custom-js/game/game.js' %}"></script>
@@ -34,14 +39,9 @@ canvas {
 
 {% endblock %}
 {% block content %}
-	<div class="container-fluid">
-		<div class="row">
-			<div class="col-sm-12 col-md-12 col-lg-12"/>
-				<h1 class="title">
-					<span class="element"></span>
-				</h1>
-			</div>
-		</div>
-	<div>
+<div class="container">
 	<canvas id="d_canvas" width="200"></canvas>
+	<p id="score_label"></p>
+	<button id="play_button" type="button">Play</button>
+</div<
 {% endblock %}
